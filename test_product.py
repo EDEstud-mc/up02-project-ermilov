@@ -1,17 +1,11 @@
-"""Проверка класса Product вручную."""
+from datetime import datetime
 from models import Product
 
+# Используем ID=1 (как в первой строке вашей таблицы "Заказ")
+p = Product(product_id=1, name="Тестовая игра", genre="RPG", price=15000, quantity=3)
 
-p = Product(
-    product_id=1,
-    genre="Экшен",
-    name="GTA V",
-    developer="Rockstar",
-    price=2000,
-    quantity=30,
-    cover="gta.png"
-)
+# Используем дату 15 сентября 2026 года из вашей БД
+date = datetime(2026, 9, 15)
 
-# Выводим информацию
-print(p.info())
-print(f"Цена со скидкой 15%: {p.price_with_discount(15):.2f} руб.")
+print(f"Базовая цена: {p.price}")
+print(f"Со скидкой: {p.price_with_discount_auto(date)}")

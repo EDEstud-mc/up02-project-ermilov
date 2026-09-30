@@ -3,3 +3,4 @@
 пара 4 - https://docs.google.com/document/d/1lerz2hp1nVGj5xASS8YR2XA2K874WoHzoIUBI5HE4fM/edit?usp=sharing
 пара 5 - https://docs.google.com/document/d/1x1rPgspHr2mAjHVflfPjG8SRwhlRa49rmAdkP6u3sNc/edit?usp=sharing
 пара 6 - https://docs.google.com/document/d/1VTNyDAyrxARQgEh0mKyxJk63j-putDehx5Aq80KDAG0/edit?usp=sharing
+пара 7 - https://docs.google.com/document/d/1SiUIdwTE1-Qc92Pjz7xmzH2_Ces_v8zID1WkpPlKTqw/edit?usp=sharing

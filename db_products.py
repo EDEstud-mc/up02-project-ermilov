@@ -5,6 +5,7 @@ from config import DB_PATH
 def get_all_products():
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
+    
     cur.execute("SELECT * FROM Товар ORDER BY id")
     products = cur.fetchall()
     conn.close()
@@ -12,10 +13,10 @@ def get_all_products():
 
 
 def get_products_by_category(category):
-    """Товары по категории."""
+    """Товары по жанру (категории)."""
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
-    cur.execute("SELECT * FROM Товар WHERE категория = ?", (category,))
+    cur.execute("SELECT * FROM Товар WHERE жанр = ?", (category,))
     products = cur.fetchall()
     conn.close()
     return products
@@ -25,6 +26,7 @@ def get_products_low_stock():
     """Товары с количеством ≤ 3."""
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
+    
     cur.execute("SELECT * FROM Товар WHERE количество <= 3")
     products = cur.fetchall()
     conn.close()
@@ -32,10 +34,11 @@ def get_products_low_stock():
 
 
 def get_categories():
-    """Список всех категорий."""
+    """Список всех жанров (категорий)."""
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
-    cur.execute("SELECT DISTINCT категория FROM Товар ORDER BY категория")
+    
+    cur.execute("SELECT DISTINCT жанр FROM Товар ORDER BY жанр")
     categories = [row[0] for row in cur.fetchall()]
     conn.close()
     return categories
@@ -48,16 +51,17 @@ def print_catalog(products):
     print("=" * 60)
 
     for p in products:
-        # ⚠️ Замените индексы на свои!
-        name = p[1]
-        category = p[2]
+       
+        
+        genre = p[1]
+        name = p[2]
         price = p[4]
-        qty = p[6]
+        qty = p[5]
 
         indicator = "много" if qty > 5 else "мало"
         highlight = "⚠️" if qty <= 3 else "  "
 
-        print(f"{highlight} {name} ({category})")
+        print(f"{highlight} {name} ({genre})")
         print(f"   Цена: {price} руб. | Кол-во: {qty} ({indicator})")
 
     print("=" * 60)

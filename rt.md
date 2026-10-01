@@ -5,3 +5,5 @@
 пара 6 - https://docs.google.com/document/d/1VTNyDAyrxARQgEh0mKyxJk63j-putDehx5Aq80KDAG0/edit?usp=sharing
 пара 7 - https://docs.google.com/document/d/1SiUIdwTE1-Qc92Pjz7xmzH2_Ces_v8zID1WkpPlKTqw/edit?usp=sharing
 пара 8 - https://docs.google.com/document/d/1C8DcUxIdjLj3K_7L1dwHO6lVvNQ_vAESzoYGwe6wKZU/edit?usp=sharing
+пара 9 - https://docs.google.com/document/d/1KOTuigOaW8GX1lAozn8iCt8SL4TZHELMoolx0kCGBGM/edit?usp=sharing
+пара 10 - https://docs.google.com/document/d/1jpo34iCmOL9PWaOKvjATxPZkMVHvb9CKIK41W275RzM/edit?usp=sharing

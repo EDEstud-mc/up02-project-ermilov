@@ -38,6 +38,11 @@ class Product:
     def discounted_price(self):
             return self.price * 0.75 
     
+    
+    def is_available(self):
+        return self.quantity > 0
+        
+
 
 
 

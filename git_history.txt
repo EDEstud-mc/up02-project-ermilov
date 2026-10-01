@@ -1,0 +1,27 @@
+* da644d9 (HEAD -> main, origin/main, origin/HEAD) Добавлен important.txt, лог и tmp проигнорированы
+* a74f012 Добавлен .gitignore с правилами для Python
+* 6748683 homework_info.txt дз
+*   e8e13dd Локальное изменение README
+|\  
+| * b737c9f Update README.md
+| * 368880e Update README.md
+:
+* da644d9 (HEAD -> main, origin/main, origin/HEAD) Добавлен important.txt, лог и tmp проигнорированы
+* a74f012 Добавлен .gitignore с правилами для Python
+* 6748683 homework_info.txt дз
+*   e8e13dd Локальное изменение README
+|\  
+| * b737c9f Update README.md
+| * 368880e Update README.md
+* | 3aecb97 Локальное изменение README
+|/  
+*   d666a83 Merge pull request #1 from EDEstud-mc/feature/remote-test
+|\  
+| * 35e8aba (origin/feature/remote-test) Добавлен файл в ветке feature/remote-test
+|/  
+* e4267f6 Update rt.md
+* 83541b4 Добавлен метод is_available
+* 4b32c04 ДЗ: работа с ветками и конфликтами
+* 1f30c38 7дз конфликт
+* 05cd176 ДЗ 7 урока
+*   71b8ee7 Merge remote-tracking branch 'refs/remotes/origin/main'

@@ -1,7 +1,7 @@
 """Настройки проекта."""
+from styles import FONT_FAMILY, COLOR_HIGHLIGHT
 
-# Путь к БД (замените N на номер вашего варианта)
 DB_PATH = "databases/db_variant_27.db"
-APP_TITLE = "Магазин видеоигр"
-FONT_FAMILY = "Arial"  # или любой другой шрифт, используемый в проекте
-COLOR_HIGHLIGHT = "#ff8080"  # цвет для подсветки малого количества товаров
+
+COMPANY_NAME = "Магазин видеоигр"
+APP_TITLE = COMPANY_NAME

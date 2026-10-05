@@ -1,8 +1,7 @@
-"""Карточка игры: вывод всех полей, крайние случаи и рефакторинг."""
 import tkinter as tk
 
 from catalog_data import (
-    prepare_product, indicator, is_low_stock, format_price, product_image_path
+    prepare_product, is_low_stock, format_price, product_image_path
 )
 from resources import get_product_image
 from styles import (
@@ -68,7 +67,8 @@ def _add_price(card, data, background, on_add_to_cart):
 def _add_label(parent, text, background, bold=False,
                size=FONT_SIZE_NORMAL, align="w"):
     label = tk.Label(parent, text=text, font=font(size, bold=bold),
-                     bg=background, anchor=align, justify="left", wraplength=300)
+                     bg=background, fg="#000000", anchor=align,
+                     justify="left", wraplength=300)
     label.pack(fill="x", pady=2)
     # Перенос сохраняет полное длинное название при изменении ширины окна.
     label.bind("<Configure>", lambda event: label.configure(
@@ -76,8 +76,9 @@ def _add_label(parent, text, background, bold=False,
     return label
 
 
-def _indicator(quantity):
-    return indicator(quantity)
+def _indicator(qty):
+    """Возвращает «много» при qty > 5, иначе «мало» (порог КИМ)."""
+    return "много" if qty > 5 else "мало"
 
 
 if __name__ == "__main__":

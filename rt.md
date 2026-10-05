@@ -11,3 +11,4 @@
 пара 12 - https://docs.google.com/document/d/1xtdlMV-0DP1uyBdSUms-HWEMM7Z15AsvyqMnj7PH1FE/edit?usp=sharing
 пара 13 - https://docs.google.com/document/d/1prEEyOFfooEmDHV1IgQ-pF9DU4KVIye8Vru5HIelqIw/edit?usp=sharing 
 пара 14 - https://docs.google.com/document/d/1wuK7R-zyS66273CGWSThfQ5SKFCSALs195kDxAvVdCU/edit?usp=sharing
+пара 15 - https://docs.google.com/document/d/16ykH7j042F2xZ4A5exN-FtNC5o3MbCkTjgd2Te0Clm0/edit?usp=sharing

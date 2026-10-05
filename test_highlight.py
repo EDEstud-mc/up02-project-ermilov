@@ -1,4 +1,3 @@
-"""Семь основных тестов подсветки из пары 14."""
 from catalog import _get_card_color
 from catalog_data import is_low_stock
 from styles import COLOR_HIGHLIGHT, COLOR_MAIN_BG
@@ -11,6 +10,9 @@ TEST_CASES = (
     (2, "#ff8080", "2 <= 3 — подсветка"),
     (1, "#ff8080", "1 <= 3 — подсветка"),
     (0, "#ff8080", "0 <= 3 — подсветка"),
+    (1000, "#FFFFFF", "ДЗ: большое число"),
+    (-1, "#ff8080", "ДЗ: -1 <= 3"),
+    (3, "#ff8080", "ДЗ: повторная проверка границы"),
 )
 
 

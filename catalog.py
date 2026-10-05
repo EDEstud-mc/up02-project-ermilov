@@ -1,7 +1,7 @@
 import tkinter as tk
 
 from catalog_data import (
-    prepare_product, is_low_stock, format_price, product_image_path
+    prepare_product, format_price, product_image_path
 )
 from resources import get_product_image
 from styles import (
@@ -22,8 +22,9 @@ def create_product_card(parent, product, on_add_to_cart=None):
     return card
 
 
-def _get_card_color(quantity):
-    return COLOR_HIGHLIGHT if is_low_stock(quantity) else COLOR_MAIN_BG
+def _get_card_color(qty):
+    """Фон #ff8080 при количестве <= 3, иначе #FFFFFF (КИМ)."""
+    return COLOR_HIGHLIGHT if qty <= 3 else COLOR_MAIN_BG
 
 
 def _add_image(card, data, background):
@@ -84,3 +85,4 @@ def _indicator(qty):
 if __name__ == "__main__":
     from main_catalog import CatalogWindow
     CatalogWindow().run()
+

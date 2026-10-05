@@ -1,4 +1,3 @@
-"""Стили приложения по руководству КИМ."""
 import tkinter as tk
 
 COLOR_MAIN_BG = "#FFFFFF"

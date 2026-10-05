@@ -2,10 +2,11 @@ import argparse
 import sqlite3
 from decimal import Decimal
 from pathlib import Path
+from PIL import Image
 
 import db_products as db
 from config import DB_PATH
-from catalog_data import ATTRIBUTES, FIELDS
+from catalog_data import ATTRIBUTES, FIELDS, product_image_path
 
 
 def products():
@@ -61,6 +62,20 @@ def test_names_not_empty():
     )
 
 
+def test_has_image():
+    for product in products():
+        path = product_image_path(product.cover)
+        if path and path.is_file():
+            try:
+                with Image.open(path) as image:
+                    image.verify()
+                print(f"  Читаемая обложка товара id={product.id}: {path.name}")
+                return True
+            except (OSError, ValueError):
+                continue
+    return False
+
+
 def run_all_tests(base_only=False):
     tests = [
         ("БД доступна", test_db_available),
@@ -71,6 +86,7 @@ def run_all_tests(base_only=False):
     ]
     if not base_only:
         tests.append(("Названия не пустые", test_names_not_empty))
+        tests.append(("Хотя бы у одного товара есть читаемая обложка", test_has_image))
     passed = 0
     for title, function in tests:
         try:

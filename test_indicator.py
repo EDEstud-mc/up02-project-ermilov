@@ -28,8 +28,25 @@ def test_indicator(base_only=False):
         passed += int(success)
         print(f"{'OK' if success else 'FAIL'} qty={qty}: {actual} "
               f"(ожидалось {expected}) — {comment}")
-    print(f"Пройдено: {passed} / {len(cases)}")
-    return passed == len(cases)
+    total = len(cases)
+    if not base_only:
+        # None и строка вызывают TypeError; для 0.5 ожидается «мало».
+        for qty, expected_error, expected_value in ((None, TypeError, None),
+                                                    ("10", TypeError, None),
+                                                    (0.5, None, "мало")):
+            try:
+                actual = _indicator(qty)
+                success = expected_error is None and actual == expected_value
+                detail = repr(actual)
+            except Exception as error:
+                success = expected_error is not None and type(error) is expected_error
+                detail = type(error).__name__
+            passed += int(success)
+            total += 1
+            expected = expected_error.__name__ if expected_error else repr(expected_value)
+            print(f"{'OK' if success else 'FAIL'} qty={qty!r}: {detail} (ожидалось {expected})")
+    print(f"Пройдено: {passed} / {total}")
+    return passed == total
 
 
 if __name__ == "__main__":

@@ -9,3 +9,4 @@
 пара 10 - https://docs.google.com/document/d/1jpo34iCmOL9PWaOKvjATxPZkMVHvb9CKIK41W275RzM/edit?usp=sharing
 пара 11 - https://docs.google.com/document/d/18RTNTIW56Hygw6LU6FUEQB5ezgv_zBHh4mCMp_lQvqI/edit?usp=sharing
 пара 12 - https://docs.google.com/document/d/1xtdlMV-0DP1uyBdSUms-HWEMM7Z15AsvyqMnj7PH1FE/edit?usp=sharing
+пара 13 - https://docs.google.com/document/d/1prEEyOFfooEmDHV1IgQ-pF9DU4KVIye8Vru5HIelqIw/edit?usp=sharing 

@@ -85,4 +85,3 @@ def _indicator(qty):
 if __name__ == "__main__":
     from main_catalog import CatalogWindow
     CatalogWindow().run()
-

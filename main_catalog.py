@@ -1,10 +1,11 @@
-"""Главное окно магазина видеоигр."""
 import os
+import sqlite3
+from pathlib import Path
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 
 import db_products as db
-from config import APP_TITLE
+from config import APP_TITLE, DB_PATH
 from catalog import create_product_card
 from resources import load_image_proportional, PATH_LOGO, PATH_ICON
 from styles import (
@@ -28,8 +29,8 @@ def set_app_icon(root, icon_path):
         if icon_img:
             root.iconphoto(True, icon_img)
             root._icon_photo = icon_img
-    except Exception as e:
-        print(f"Не удалось установить иконку: {e}")
+    except (OSError, tk.TclError):
+        pass
 
 
 class CatalogWindow:
@@ -100,8 +101,35 @@ class CatalogWindow:
             self.canvas.yview_scroll(step, "units")
 
     def load_products(self):
-        for product in db.get_all_products():
-            create_product_card(self.catalog_frame, product)
+        if not Path(DB_PATH).is_file():
+            messagebox.showerror(
+                "Ошибка БД", "Не найден файл databases/db_variant_27.db.",
+                parent=self.root
+            )
+            return
+        try:
+            products = db.get_all_products()
+        except (sqlite3.Error, IndexError, TypeError, ValueError) as error:
+            messagebox.showerror(
+                "Ошибка БД", f"Не удалось прочитать товары: {error}",
+                parent=self.root
+            )
+            return
+        if not products:
+            tk.Label(self.catalog_frame, text="В каталоге пока нет товаров",
+                     bg=COLOR_MAIN_BG, fg="#000000", font=font()).pack(pady=20)
+            return
+        errors = []
+        for product in products:
+            try:
+                create_product_card(self.catalog_frame, product)
+            except (ValueError, TypeError, AttributeError, IndexError) as error:
+                errors.append(f"id={getattr(product, 'id', '?')}: {error}")
+        if errors:
+            messagebox.showwarning(
+                "Некорректные данные", "Некоторые товары не показаны:\n"
+                + "\n".join(errors), parent=self.root
+            )
 
     def run(self):
         self.root.mainloop()

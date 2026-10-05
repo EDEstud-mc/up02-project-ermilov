@@ -1,4 +1,5 @@
 from pathlib import Path
+import tkinter as tk
 from PIL import Image, ImageTk
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -18,8 +19,7 @@ def load_image(path, size=(100, 100)):
             image = source.convert("RGBA")
         image = image.resize(size, Image.Resampling.LANCZOS)
         return ImageTk.PhotoImage(image)
-    except (OSError, ValueError) as error:
-        print(f"Ошибка загрузки {path}: {error}")
+    except (OSError, ValueError, tk.TclError):
         return None
 
 
@@ -29,8 +29,7 @@ def load_image_proportional(path, max_size=(100, 100)):
             image = source.convert("RGBA")
         image.thumbnail(max_size, Image.Resampling.LANCZOS)
         return ImageTk.PhotoImage(image)
-    except (OSError, ValueError) as error:
-        print(f"Ошибка загрузки {path}: {error}")
+    except (OSError, ValueError, tk.TclError):
         return None
 
 

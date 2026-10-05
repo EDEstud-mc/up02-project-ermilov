@@ -1,7 +1,8 @@
-"""Настройки проекта."""
+from pathlib import Path
 from styles import FONT_FAMILY, COLOR_HIGHLIGHT
 
-DB_PATH = "databases/db_variant_27.db"
+BASE_DIR = Path(__file__).resolve().parent
+DB_PATH = str(BASE_DIR / "databases" / "db_variant_27.db")
 
 COMPANY_NAME = "Магазин видеоигр"
 APP_TITLE = COMPANY_NAME

@@ -1,62 +1,36 @@
 import sqlite3
-from datetime import datetime
+from contextlib import closing
+from datetime import datetime, timedelta
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
+from pathlib import Path
+
+from config import DB_PATH
+from error_handler import safe_call
+
+
+def _calculate_price(product_id, price, date_context=None):
+    try:
+        amount = Decimal(str(price))
+    except InvalidOperation as error:
+        raise ValueError("Цена должна быть числом") from error
+    if not amount.is_finite() or amount < 0:
+        raise ValueError("Цена должна быть конечным неотрицательным числом")
+    current = date_context or datetime.now()
+    current_start = current.date().replace(day=1)
+    previous_start = (current_start - timedelta(days=1)).replace(day=1)
+    # mode=ro не создаёт пустую БД при неверном пути.
+    uri = Path(DB_PATH).resolve().as_uri() + "?mode=ro"
+    with closing(sqlite3.connect(uri, uri=True)) as connection:
+        count = connection.execute(
+            "SELECT COUNT(*) FROM Заказ "
+            "WHERE товар_id = ? AND дата >= ? AND дата < ?",
+            (product_id, previous_start.isoformat(), current_start.isoformat())
+        ).fetchone()[0]
+    if count == 0:
+        amount *= Decimal("0.75")
+    return float(amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
 
 
 def calculate_price_with_discount(product_id, price, date_context=None):
-    """Вычисляет цену со скидкой 25%, если товар не заказывали в прошлом месяце."""
-    if date_context is None:
-        date_context = datetime.now()
-
-    
-    current_year = date_context.year
-    current_month = date_context.month
-
-    if current_month == 1:
-        prev_month = 12
-        prev_year = current_year - 1
-    else:
-        prev_month = current_month - 1
-        prev_year = current_year
-
-    
-    start_date = f"{prev_year}-{prev_month:02d}-01"
-    end_date = f"{prev_year}-{prev_month:02d}-31"
-
-    
-    conn = sqlite3.connect("databases/db_variant_27.db")
-    cursor = conn.cursor()
-
-    
-    cursor.execute("PRAGMA table_info(Заказ)")
-    columns = [row[1].lower() for row in cursor.fetchall()]
-
-    
-    target_column = None
-    for col in ["id_товара", "id_товар", "товар_id", "товар"]:
-        if col in columns:
-            target_column = col
-            break
-
-    
-    if not target_column and len(columns) > 1:
-        target_column = columns[1]
-
-    
-    query = f"""
-        SELECT COUNT(*) FROM Заказ 
-        WHERE `{target_column}` = ? AND дата BETWEEN ? AND ?
-    """
-
-    cursor.execute(query, (product_id, start_date, end_date))
-    db_result = cursor.fetchone()
-    
-    
-    count = db_result[0] if db_result else 0
-    conn.close()
-
-    
-    if count == 0:
-        return round(price * 0.75, 2)
-
-    
-    return float(price)
+    """При ошибке возвращает None; это не бесплатный товар и не нулевая цена."""
+    return safe_call(_calculate_price, product_id, price, date_context)

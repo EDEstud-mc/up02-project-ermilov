@@ -10,7 +10,8 @@ from styles import (
 )
 
 
-def create_product_card(parent, product, on_add_to_cart=None):
+def create_product_card(parent, product, on_add_to_cart=None,
+                        on_add_to_order=None):
     """Создаёт карточку из объекта Product или строки БД варианта 27."""
     data = prepare_product(product)
     background = _get_card_color(data["quantity"])
@@ -19,6 +20,7 @@ def create_product_card(parent, product, on_add_to_cart=None):
     _add_image(card, data, background)
     _add_price(card, data, background, on_add_to_cart)
     _add_text_info(card, data, background)
+    _bind_view_click(card, lambda: _open_view(parent, product, on_add_to_order))
     return card
 
 
@@ -80,6 +82,21 @@ def _add_label(parent, text, background, bold=False,
 def _indicator(qty):
     """Возвращает «много» при qty > 5, иначе «мало» (порог КИМ)."""
     return "много" if qty > 5 else "мало"
+
+
+def _bind_view_click(widget, callback):
+    """Все уровни вложенности; кнопки сохраняют свой command."""
+    if isinstance(widget, tk.Button):
+        return
+    widget.bind("<Button-1>", lambda event: callback(), add="+")
+    for child in widget.winfo_children():
+        _bind_view_click(child, callback)
+
+
+def _open_view(parent, product, on_add_to_order=None):
+    from view_form import ViewForm
+    from error_handler import safe_call
+    return safe_call(ViewForm, parent.winfo_toplevel(), product, on_add_to_order)
 
 
 if __name__ == "__main__":

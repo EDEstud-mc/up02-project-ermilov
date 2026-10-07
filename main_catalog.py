@@ -7,6 +7,8 @@ from tkinter import ttk, messagebox
 import db_products as db
 from config import APP_TITLE, DB_PATH
 from catalog import create_product_card
+from catalog_data import prepare_product
+from error_handler import safe_call
 from resources import load_image_proportional, PATH_LOGO, PATH_ICON
 from styles import (
     COLOR_MAIN_BG, COLOR_SECONDARY_BG,
@@ -44,6 +46,7 @@ class CatalogWindow:
         self.root.geometry("900x700")
         self.root.minsize(600, 500)
         set_app_icon(self.root, PATH_ICON)
+        self.order_items = {}
         self.build_ui()
         self.load_products()
 
@@ -107,13 +110,8 @@ class CatalogWindow:
                 parent=self.root
             )
             return
-        try:
-            products = db.get_all_products()
-        except (sqlite3.Error, IndexError, TypeError, ValueError) as error:
-            messagebox.showerror(
-                "Ошибка БД", f"Не удалось прочитать товары: {error}",
-                parent=self.root
-            )
+        products = safe_call(db.get_all_products)
+        if products is None:
             return
         if not products:
             tk.Label(self.catalog_frame, text="В каталоге пока нет товаров",
@@ -121,15 +119,31 @@ class CatalogWindow:
             return
         errors = []
         for product in products:
-            try:
-                create_product_card(self.catalog_frame, product)
-            except (ValueError, TypeError, AttributeError, IndexError) as error:
-                errors.append(f"id={getattr(product, 'id', '?')}: {error}")
+            safe_call(self._create_card_checked, product, errors)
         if errors:
             messagebox.showwarning(
                 "Некорректные данные", "Некоторые товары не показаны:\n"
                 + "\n".join(errors), parent=self.root
             )
+
+    def _create_card_checked(self, product, errors):
+        try:
+            return create_product_card(
+                self.catalog_frame, product, on_add_to_order=self.add_to_order
+            )
+        except (ValueError, TypeError, AttributeError, IndexError) as error:
+            errors.append(f"id={getattr(product, 'id', '?')}: {error}")
+
+    def add_to_order(self, product, quantity=1):
+        """Учебный заказ в памяти. Записи в SQLite эта пара не создаёт."""
+        data = prepare_product(product)
+        if isinstance(quantity, bool) or not isinstance(quantity, int) or quantity <= 0:
+            raise ValueError("Количество должно быть положительным целым числом")
+        current = self.order_items.get(data["id"], 0)
+        if current + quantity > data["quantity"]:
+            available = max(0, data["quantity"] - current)
+            raise ValueError(f"Можно добавить ещё {available} шт.")
+        self.order_items[data["id"]] = current + quantity
 
     def run(self):
         self.root.mainloop()

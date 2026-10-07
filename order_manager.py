@@ -92,10 +92,25 @@ def _checkout_price(connection, product_id, base_price, order_date):
 
 
 def _decrease(connection, product_id, quantity):
-    row = connection.execute("SELECT количество FROM Товар WHERE id=?", (product_id,)).fetchone()
-    if row is None or row[0] < quantity:
+    _check_quantity(quantity)
+    cursor = connection.execute(
+        "UPDATE Товар SET количество=количество-? WHERE id=? AND количество>=?",
+        (quantity, product_id, quantity)
+    )
+    if cursor.rowcount != 1:
         raise ValueError(f"Недостаточно товара id={product_id}")
-    connection.execute("UPDATE Товар SET количество=? WHERE id=?", (row[0]-quantity, product_id))
+
+
+def _decrease_only(product_id, quantity):
+    with closing(get_connection()) as connection, connection:
+        connection.execute("BEGIN IMMEDIATE")
+        _decrease(connection, product_id, quantity)
+    return True
+
+
+def decrease_product_quantity(product_id, quantity):
+    """Для отдельного учебного UPDATE; не вызывайте после create_order."""
+    return safe_call(_decrease_only, product_id, quantity) is True
 
 
 def _create_order(client, items, order_date=None):

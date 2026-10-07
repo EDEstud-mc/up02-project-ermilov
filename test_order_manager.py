@@ -111,5 +111,24 @@ class OrderTests(DatabaseTests):
             self.assertEqual(connection.execute("SELECT COUNT(*) FROM Заказ").fetchone()[0], self.counts()[0])
 
 
+class StockTests(DatabaseTests):
+    def test_decrease_never_produces_negative_stock(self):
+        self.execute("UPDATE Товар SET количество=1 WHERE id=1")
+        self.assertFalse(orders.decrease_product_quantity(1, 5))
+        self.assertEqual(orders.get_product_quantity(1), 1)
+        self.assertTrue(orders.decrease_product_quantity(1, 1))
+        self.assertEqual(orders.get_product_quantity(1), 0)
+        self.assertFalse(orders.decrease_product_quantity(1, 1))
+
+    def test_two_buyers_cannot_buy_same_last_unit(self):
+        from concurrent.futures import ThreadPoolExecutor
+        self.execute("UPDATE Товар SET количество=1 WHERE id=1")
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            results = list(executor.map(lambda client: orders.create_order(client, [(1, None, 1, 100)]),
+                                        ["Клиент 1", "Клиент 2"]))
+        self.assertEqual(sum(result is not None for result in results), 1)
+        self.assertEqual(orders.get_product_quantity(1), 0)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

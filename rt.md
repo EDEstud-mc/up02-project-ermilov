@@ -20,4 +20,5 @@
 пара 23 - https://docs.google.com/document/d/14T5Xp4TQAJ3OEtyXUTEO3dV2p6wFSoF0KcWXZH3WKmI/edit?usp=sharing
 пара 24 - https://docs.google.com/document/d/1PUvdVsXN7_zRqCXmJ6wSM1Az0dns1EnQKbaQqmM4N3A/edit?usp=sharing
 пара 25 - https://docs.google.com/document/d/1ieQ9Ssp-y4qg0MNQCYmbGeV0qXiYXXYxIDDudUlYJoI/edit?usp=sharing
-пара 26 - 
+пара 26 - https://docs.google.com/document/d/1GOOcjHtiShH1qqxTqOyCCEhLNqo_oLOZBIbPao4eE20/edit?usp=sharing
+пара 27 - 

@@ -6,6 +6,7 @@ from pathlib import Path
 
 from config import DB_PATH
 from error_handler import safe_call
+from permissions import require_order_create, require_order_view
 
 
 def get_connection():
@@ -133,9 +134,13 @@ def _create_order(client, items, order_date=None):
         return order_id
 
 
-def create_order(client, items, date=None):
-    """items: (product_id, None, quantity, price); один commit на все позиции."""
-    return safe_call(_create_order, client, items, date)
+def _create_for_user(client, items, date, current_user):
+    require_order_create(current_user)
+    return _create_order(client, items, date)
+
+
+def create_order(client, items, date=None, current_user=None):
+    return safe_call(_create_for_user, client, items, date, current_user)
 
 
 def _read_rows(query, parameters=()):
@@ -143,22 +148,27 @@ def _read_rows(query, parameters=()):
         return connection.execute(query, parameters).fetchall()
 
 
-def get_all_orders():
-    return safe_call(_read_rows, "SELECT id, дата, клиент FROM Заказ ORDER BY id DESC")
+def _read_for_user(query, parameters, current_user):
+    require_order_view(current_user)
+    return _read_rows(query, parameters)
 
 
-def get_order_items(order_id):
-    return safe_call(_read_rows, """
+def get_all_orders(current_user=None):
+    return safe_call(_read_for_user, "SELECT id, дата, клиент FROM Заказ ORDER BY id DESC", (), current_user)
+
+
+def get_order_items(order_id, current_user=None):
+    return safe_call(_read_for_user, """
         SELECT Состав_заказа.id, Товар.название, Товар.разработчик, Состав_заказа.размер,
                Состав_заказа.количество, Состав_заказа.цена
         FROM Состав_заказа JOIN Товар ON Состав_заказа.товар_id=Товар.id
         WHERE заказ_id=? ORDER BY Состав_заказа.id
-    """, (order_id,))
+    """, (order_id,), current_user)
 
 
-def get_order_total(order_id):
-    rows = safe_call(_read_rows,
-                     "SELECT количество, цена FROM Состав_заказа WHERE заказ_id=?", (order_id,))
+def get_order_total(order_id, current_user=None):
+    rows = safe_call(_read_for_user,
+                     "SELECT количество, цена FROM Состав_заказа WHERE заказ_id=?", (order_id,), current_user)
     if rows is None:
         return None
     return sum((quantity * _money(price) for quantity, price in rows), Decimal("0.00"))

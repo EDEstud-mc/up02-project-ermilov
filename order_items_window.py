@@ -4,11 +4,13 @@ from decimal import Decimal
 
 import order_manager as orders
 from catalog_data import format_price
+from permissions import require_order_view
 from styles import COLOR_MAIN_BG, COLOR_SECONDARY_BG, COLOR_ACCENT, font
 
 
 class OrderItemsWindow:
     def __init__(self, parent, order_id, current_user=None, on_changed=None):
+        require_order_view(current_user)
         self.order_id = order_id
         self.current_user = current_user
         self.on_changed = on_changed
@@ -43,7 +45,7 @@ class OrderItemsWindow:
         self.load_items()
 
     def load_items(self):
-        rows = orders.get_order_items(self.order_id)
+        rows = orders.get_order_items(self.order_id, self.current_user)
         if rows is None:
             self.total_label.configure(text="Не удалось прочитать состав")
             return
@@ -56,7 +58,7 @@ class OrderItemsWindow:
             self.tree.insert("", "end", iid=str(item_id),
                              values=(name, developer, "Не применим", quantity,
                                      format_price(amount), format_price(amount*quantity)))
-        stored_total = orders.get_order_total(self.order_id)
+        stored_total = orders.get_order_total(self.order_id, self.current_user)
         if stored_total is None:
             self.total_label.configure(text="Не удалось рассчитать итог")
             return

@@ -11,6 +11,7 @@ from catalog_data import prepare_product
 from error_handler import safe_call
 from discount import calculate_price_with_discount
 from order_manager import get_product_quantity
+from permissions import can_order, can_view_orders, is_admin
 from resources import load_image_proportional, PATH_LOGO, PATH_ICON
 from styles import (
     COLOR_MAIN_BG, COLOR_SECONDARY_BG, COLOR_ACCENT,
@@ -48,9 +49,12 @@ class CatalogWindow:
         self.root.geometry("900x700")
         self.root.minsize(600, 500)
         set_app_icon(self.root, PATH_ICON)
+        self.current_user = None
         self.cart = {}
         self.build_ui()
         self.load_products()
+        self.add_role_buttons()
+        self.root.after(0, self.require_auth)
 
     def build_ui(self):
         header = tk.Frame(self.root, bg=COLOR_SECONDARY_BG, height=80)
@@ -73,10 +77,12 @@ class CatalogWindow:
             font=font(FONT_SIZE_TITLE, bold=True), bg=COLOR_SECONDARY_BG
         ).pack(side="left", expand=True)
 
-        tk.Button(header, text="Заказы", command=self.open_orders,
-                  bg=COLOR_ACCENT, fg="white", font=font()).pack(side="right", padx=10)
-        tk.Button(header, text="Корзина", command=self.open_cart,
-                  bg=COLOR_ACCENT, fg="white", font=font()).pack(side="right", padx=10)
+        account = tk.Frame(header, bg=COLOR_SECONDARY_BG)
+        account.pack(side="right", padx=10)
+        self.user_label = tk.Label(account, text="Не авторизован", bg=COLOR_SECONDARY_BG, font=font(10))
+        self.user_label.pack(anchor="e")
+        self.role_buttons = tk.Frame(account, bg=COLOR_SECONDARY_BG)
+        self.role_buttons.pack(anchor="e")
 
         self.canvas = tk.Canvas(self.root, bg=COLOR_MAIN_BG, highlightthickness=0)
         scrollbar = ttk.Scrollbar(
@@ -142,6 +148,8 @@ class CatalogWindow:
             errors.append(f"id={getattr(product, 'id', '?')}: {error}")
 
     def add_to_cart(self, product, quantity):
+        if not can_order(self.current_user):
+            raise PermissionError("Для оформления заказа войдите в систему")
         data = prepare_product(product)
         current = get_product_quantity(data["id"])
         if current is None:
@@ -156,11 +164,57 @@ class CatalogWindow:
 
     def open_orders(self):
         from orders_window import OrdersWindow
-        safe_call(OrdersWindow, self.root, None, self.refresh_catalog)
+        if not can_view_orders(self.current_user):
+            messagebox.showwarning("Доступ", "Заказы доступны Менеджеру и Администратору")
+            return
+        safe_call(OrdersWindow, self.root, self.current_user, self.refresh_catalog)
 
     def open_cart(self):
         from cart_window import CartWindow
-        safe_call(CartWindow, self.root, self.cart, self.refresh_catalog)
+        if not can_order(self.current_user):
+            messagebox.showwarning("Доступ", "Сначала войдите в систему")
+            return
+        safe_call(CartWindow, self.root, self.cart, self.refresh_catalog, self.current_user)
+
+    def require_auth(self):
+        from auth import AuthWindow
+        safe_call(AuthWindow, self.root, self.on_auth_success)
+
+    def on_auth_success(self, user):
+        self.current_user = user
+        self.cart.clear()
+        fio = " ".join(part for part in user[1:4] if part)
+        self.user_label.configure(text=f"{fio} ({user[5]})")
+        self.add_role_buttons()
+
+    def add_role_buttons(self):
+        for widget in self.role_buttons.winfo_children():
+            widget.destroy()
+        actions = [("Войти", self.require_auth)] if self.current_user is None else [
+            ("Корзина", self.open_cart), ("Выйти", self.logout)]
+        if can_view_orders(self.current_user):
+            actions.insert(0, ("Заказы", self.open_orders))
+        if is_admin(self.current_user):
+            actions.insert(0, ("Админ-панель", self.open_admin))
+        for title, command in actions:
+            tk.Button(self.role_buttons, text=title, command=command,
+                      bg=COLOR_ACCENT, fg="white", font=font(10)).pack(side="left", padx=2)
+
+    def open_admin(self):
+        if not is_admin(self.current_user):
+            messagebox.showwarning("Доступ", "Только для Администратора")
+            return
+        self.open_orders()
+
+    def logout(self):
+        self.current_user = None
+        self.cart.clear()
+        for widget in self.root.winfo_children():
+            if isinstance(widget, tk.Toplevel):
+                widget.destroy()
+        self.user_label.configure(text="Не авторизован")
+        self.add_role_buttons()
+        self.require_auth()
 
     def refresh_catalog(self):
         for widget in self.catalog_frame.winfo_children():

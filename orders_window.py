@@ -3,11 +3,13 @@ from tkinter import ttk, messagebox
 
 import order_manager as orders
 from error_handler import safe_call
+from permissions import require_order_view
 from styles import COLOR_MAIN_BG, COLOR_SECONDARY_BG, COLOR_ACCENT, font
 
 
 class OrdersWindow:
     def __init__(self, parent, current_user=None, on_changed=None):
+        require_order_view(current_user)
         self.current_user = current_user
         self.on_changed = on_changed
         self.window = tk.Toplevel(parent)
@@ -38,7 +40,7 @@ class OrdersWindow:
         self.load_orders()
 
     def load_orders(self):
-        rows = orders.get_all_orders()
+        rows = orders.get_all_orders(self.current_user)
         if rows is None:
             return
         for item in self.tree.get_children():

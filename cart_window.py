@@ -7,7 +7,8 @@ from styles import COLOR_MAIN_BG, COLOR_ACCENT, font
 
 
 class CartWindow:
-    def __init__(self, parent, cart, on_saved=None):
+    def __init__(self, parent, cart, on_saved=None, current_user=None):
+        self.current_user = current_user
         self.cart = cart
         self.on_saved = on_saved
         self.window = tk.Toplevel(parent)
@@ -52,7 +53,7 @@ class CartWindow:
             return
         items = [(product_id, None, item["quantity"], None)
                  for product_id, item in self.cart.items()]
-        order_id = create_order(client, items)
+        order_id = create_order(client, items, current_user=self.current_user)
         if order_id is None:
             return
         self.cart.clear()

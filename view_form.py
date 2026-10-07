@@ -8,7 +8,7 @@ from styles import (
     COLOR_MAIN_BG, COLOR_SECONDARY_BG, COLOR_ACCENT,
     FONT_SIZE_NORMAL, FONT_SIZE_TITLE, font
 )
-
+from error_handler import validate_positive_int
 
 
 class ViewForm:
@@ -66,7 +66,14 @@ class ViewForm:
             self._add_field(info, "Обычная цена",
                             f"{format_price(data['price'])} руб.")
             self._add_field(info, "В наличии", f"{data['quantity']} шт.")
-
+        self._add_field(info, "Описание", "В БД варианта 27 не хранится")
+        row = tk.Frame(info, bg=COLOR_MAIN_BG)
+        row.pack(fill="x", pady=8)
+        tk.Label(row, text="Количество:", font=font(bold=True), width=17,
+                 anchor="w", bg=COLOR_MAIN_BG).pack(side="left")
+        self.quantity_var = tk.StringVar(self.window, value="1")
+        tk.Entry(row, textvariable=self.quantity_var, width=8,
+                 font=font()).pack(side="left")
         tk.Label(info, text="Добавление действует до закрытия каталога.",
                  bg=COLOR_MAIN_BG, font=font(10), wraplength=330,
                  justify="left").pack(anchor="w", pady=10)
@@ -104,9 +111,13 @@ class ViewForm:
             messagebox.showerror("Ошибка", "Сначала устраните ошибку расчёта цены",
                                  parent=self.window)
             return
-
+        valid, result = validate_positive_int(self.quantity_var.get(), "Количество")
+        if not valid:
+            messagebox.showwarning("Некорректное количество", result,
+                                   parent=self.window)
+            return
         try:
-            self.on_add_to_order(self.product)
+            self.on_add_to_order(self.product, result)
             messagebox.showinfo("Успех", "Товар добавлен в заказ текущего сеанса",
                                 parent=self.window)
         except Exception as error:

@@ -130,5 +130,22 @@ class StockTests(DatabaseTests):
         self.assertEqual(orders.get_product_quantity(1), 0)
 
 
+class ListTests(DatabaseTests):
+    def test_orders_sorted_and_items_belong_to_selected_order(self):
+        order_id = orders.create_order("Уникальный клиент", [(1, None, 1, 123)])
+        rows = orders.get_all_orders()
+        self.assertEqual(rows[0][0], order_id)
+        self.assertEqual(rows[0][2], "Уникальный клиент")
+        items = orders.get_order_items(order_id)
+        self.assertEqual(len(items), 1)
+        self.assertEqual(items[0][3], 1)
+        self.assertEqual(items[0][4], 123)
+
+    def test_empty_composition_and_total(self):
+        order_id = orders.add_order_to_db("Пустой учебный заголовок")
+        self.assertEqual(orders.get_order_items(order_id), [])
+        self.assertEqual(orders.get_order_total(order_id), Decimal("0.00"))
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -71,8 +71,10 @@ class CatalogWindow:
         tk.Label(
             header, text="КАТАЛОГ ТОВАРОВ",
             font=font(FONT_SIZE_TITLE, bold=True), bg=COLOR_SECONDARY_BG
-        ).pack(expand=True)
+        ).pack(side="left", expand=True)
 
+        tk.Button(header, text="Заказы", command=self.open_orders,
+                  bg=COLOR_ACCENT, fg="white", font=font()).pack(side="right", padx=10)
         tk.Button(header, text="Корзина", command=self.open_cart,
                   bg=COLOR_ACCENT, fg="white", font=font()).pack(side="right", padx=10)
 
@@ -151,6 +153,10 @@ class CatalogWindow:
         if price is None:
             raise ValueError("Не удалось рассчитать цену")
         self.cart[data["id"]] = dict(name=data["name"], quantity=previous+quantity, price=price)
+
+    def open_orders(self):
+        from orders_window import OrdersWindow
+        safe_call(OrdersWindow, self.root, None, self.refresh_catalog)
 
     def open_cart(self):
         from cart_window import CartWindow

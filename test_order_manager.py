@@ -138,13 +138,30 @@ class ListTests(DatabaseTests):
         self.assertEqual(rows[0][2], "Уникальный клиент")
         items = orders.get_order_items(order_id)
         self.assertEqual(len(items), 1)
-        self.assertEqual(items[0][3], 1)
-        self.assertEqual(items[0][4], 123)
+        self.assertEqual(items[0][4], 1)
+        self.assertEqual(items[0][5], 123)
 
     def test_empty_composition_and_total(self):
         order_id = orders.add_order_to_db("Пустой учебный заголовок")
         self.assertEqual(orders.get_order_items(order_id), [])
         self.assertEqual(orders.get_order_total(order_id), Decimal("0.00"))
+
+
+class JoinTests(DatabaseTests):
+    def test_join_returns_real_name_and_developer(self):
+        name, developer = self.rows("SELECT название, разработчик FROM Товар WHERE id=1")[0]
+        order_id = orders.create_order("Клиент", [(1, None, 1, 100)])
+        item = orders.get_order_items(order_id)[0]
+        self.assertEqual(len(item), 6)
+        self.assertEqual(item[1:3], (name, developer))
+        self.assertIsNone(item[3])
+
+    def test_total_equals_sum_of_joined_positions(self):
+        order_id = orders.create_order("Клиент", [(1, None, 2, 10.10), (2, None, 3, 20.20)])
+        joined = orders.get_order_items(order_id)
+        total = sum((Decimal(str(item[5])) * item[4] for item in joined), Decimal("0.00"))
+        self.assertEqual(orders.get_order_total(order_id), total)
+        self.assertEqual(total, Decimal("80.80"))
 
 
 if __name__ == "__main__":

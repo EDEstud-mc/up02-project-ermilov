@@ -8,7 +8,8 @@ from styles import (
     COLOR_MAIN_BG, COLOR_SECONDARY_BG, COLOR_ACCENT,
     FONT_SIZE_NORMAL, FONT_SIZE_TITLE, font
 )
-from error_handler import validate_positive_int
+from error_handler import validate_positive_int, safe_call
+from order_manager import place_order, get_product_quantity
 
 
 class ViewForm:
@@ -73,8 +74,8 @@ class ViewForm:
                  anchor="w", bg=COLOR_MAIN_BG).pack(side="left")
         self.quantity_var = tk.StringVar(self.window, value="1")
         tk.Entry(row, textvariable=self.quantity_var, width=8,
-                 font=font()).pack(side="left")
-        tk.Label(info, text="Добавление действует до закрытия каталога.",
+                 font=font(), state="disabled").pack(side="left")
+        tk.Label(info, text="Заказ записывается в БД; остаток уменьшается.",
                  bg=COLOR_MAIN_BG, font=font(10), wraplength=330,
                  justify="left").pack(anchor="w", pady=10)
 
@@ -100,10 +101,6 @@ class ViewForm:
             wraplength=max(60, event.width - 8)))
 
     def add_to_order(self):
-        if self.on_add_to_order is None:
-            messagebox.showinfo("Информация", "Функция в разработке",
-                                parent=self.window)
-            return
         if self.product is None:
             messagebox.showerror("Ошибка", "Товар не выбран", parent=self.window)
             return
@@ -116,11 +113,18 @@ class ViewForm:
             messagebox.showwarning("Некорректное количество", result,
                                    parent=self.window)
             return
-        try:
-            self.on_add_to_order(self.product, result)
-            messagebox.showinfo("Успех", "Товар добавлен в заказ текущего сеанса",
-                                parent=self.window)
-        except Exception as error:
-            messagebox.showerror("Ошибка заказа",
-                                 f"Не удалось добавить товар:\n{error}",
-                                 parent=self.window)
+        current = get_product_quantity(self.data["id"])
+        if current is None:
+            return
+        if result > current:
+            messagebox.showwarning("Недостаточно товара", f"Доступно {current} шт.",
+                                   parent=self.window)
+            return
+        order_id = place_order("Учебный клиент", self.data["id"], result)
+        if order_id is None:
+            return
+        messagebox.showinfo("Успех", f"Заказ №{order_id} сохранён в БД",
+                            parent=self.window)
+        if self.on_add_to_order is not None:
+            safe_call(self.on_add_to_order)
+        self.window.destroy()

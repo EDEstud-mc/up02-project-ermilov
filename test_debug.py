@@ -63,12 +63,12 @@ class DebugTests(unittest.TestCase):
         self.assertTrue(Path(DB_PATH).is_absolute())
         before = db_products.get_all_products()
         previous = Path.cwd()
-        try:
-            with tempfile.TemporaryDirectory() as directory:
+        with tempfile.TemporaryDirectory() as directory:
+            try:
                 os.chdir(directory)
                 after = db_products.get_all_products()
-        finally:
-            os.chdir(previous)
+            finally:
+                os.chdir(previous)
         self.assertTrue(before)
         self.assertEqual([p.id for p in before], [p.id for p in after])
 
@@ -209,4 +209,3 @@ def main():
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

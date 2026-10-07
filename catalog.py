@@ -11,7 +11,7 @@ from styles import (
 
 
 def create_product_card(parent, product, on_add_to_cart=None,
-                        on_add_to_order=None):
+                        refresh=None):
     """Создаёт карточку из объекта Product или строки БД варианта 27."""
     data = prepare_product(product)
     background = _get_card_color(data["quantity"])
@@ -20,7 +20,7 @@ def create_product_card(parent, product, on_add_to_cart=None,
     _add_image(card, data, background)
     _add_price(card, data, background, on_add_to_cart)
     _add_text_info(card, data, background)
-    _bind_view_click(card, lambda: _open_view(parent, product, on_add_to_order))
+    _bind_view_click(card, lambda: _open_view(parent, product, refresh))
     return card
 
 
@@ -93,10 +93,10 @@ def _bind_view_click(widget, callback):
         _bind_view_click(child, callback)
 
 
-def _open_view(parent, product, on_add_to_order=None):
+def _open_view(parent, product, refresh=None):
     from view_form import ViewForm
     from error_handler import safe_call
-    return safe_call(ViewForm, parent.winfo_toplevel(), product, on_add_to_order)
+    return safe_call(ViewForm, parent.winfo_toplevel(), product, refresh)
 
 
 if __name__ == "__main__":

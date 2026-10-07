@@ -46,7 +46,6 @@ class CatalogWindow:
         self.root.geometry("900x700")
         self.root.minsize(600, 500)
         set_app_icon(self.root, PATH_ICON)
-        self.order_items = {}
         self.build_ui()
         self.load_products()
 
@@ -129,21 +128,15 @@ class CatalogWindow:
     def _create_card_checked(self, product, errors):
         try:
             return create_product_card(
-                self.catalog_frame, product, on_add_to_order=self.add_to_order
+                self.catalog_frame, product, refresh=self.refresh_catalog
             )
         except (ValueError, TypeError, AttributeError, IndexError) as error:
             errors.append(f"id={getattr(product, 'id', '?')}: {error}")
 
-    def add_to_order(self, product, quantity=1):
-        """Учебный заказ в памяти. Записи в SQLite эта пара не создаёт."""
-        data = prepare_product(product)
-        if isinstance(quantity, bool) or not isinstance(quantity, int) or quantity <= 0:
-            raise ValueError("Количество должно быть положительным целым числом")
-        current = self.order_items.get(data["id"], 0)
-        if current + quantity > data["quantity"]:
-            available = max(0, data["quantity"] - current)
-            raise ValueError(f"Можно добавить ещё {available} шт.")
-        self.order_items[data["id"]] = current + quantity
+    def refresh_catalog(self):
+        for widget in self.catalog_frame.winfo_children():
+            widget.destroy()
+        self.load_products()
 
     def run(self):
         self.root.mainloop()

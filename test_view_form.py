@@ -1,3 +1,4 @@
+from contextlib import closing
 import argparse
 import sqlite3
 import sys
@@ -130,7 +131,7 @@ class MainTests(unittest.TestCase):
     def test_discount_month_boundaries_and_decimal(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "test.db"
-            with sqlite3.connect(path) as connection:
+            with closing(sqlite3.connect(path)) as connection, connection:
                 connection.execute("CREATE TABLE Заказ (товар_id INTEGER, дата TEXT)")
                 connection.executemany("INSERT INTO Заказ VALUES (?, ?)",
                                        [(1, "2024-02-29"), (2, "2024-03-01"),

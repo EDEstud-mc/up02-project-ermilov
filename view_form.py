@@ -74,7 +74,14 @@ class ViewForm:
                  anchor="w", bg=COLOR_MAIN_BG).pack(side="left")
         self.quantity_var = tk.StringVar(self.window, value="1")
         tk.Entry(row, textvariable=self.quantity_var, width=8,
-                 font=font(), state="disabled").pack(side="left")
+                 font=font()).pack(side="left")
+        client_row = tk.Frame(info, bg=COLOR_MAIN_BG)
+        client_row.pack(fill="x", pady=8)
+        tk.Label(client_row, text="ФИО клиента:", font=font(bold=True),
+                 width=17, anchor="w", bg=COLOR_MAIN_BG).pack(side="left")
+        self.client_var = tk.StringVar(self.window, value="")
+        tk.Entry(client_row, textvariable=self.client_var,
+                 font=font()).pack(side="left", fill="x", expand=True)
         tk.Label(info, text="Заказ записывается в БД; остаток уменьшается.",
                  bg=COLOR_MAIN_BG, font=font(10), wraplength=330,
                  justify="left").pack(anchor="w", pady=10)
@@ -120,7 +127,11 @@ class ViewForm:
             messagebox.showwarning("Недостаточно товара", f"Доступно {current} шт.",
                                    parent=self.window)
             return
-        order_id = place_order("Учебный клиент", self.data["id"], result)
+        client = self.client_var.get().strip()
+        if not client:
+            messagebox.showwarning("Клиент", "Укажите ФИО клиента", parent=self.window)
+            return
+        order_id = place_order(client, self.data["id"], result)
         if order_id is None:
             return
         messagebox.showinfo("Успех", f"Заказ №{order_id} сохранён в БД",

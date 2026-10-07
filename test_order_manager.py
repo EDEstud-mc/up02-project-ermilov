@@ -80,5 +80,51 @@ class OrderTests(unittest.TestCase):
         self.assertFalse(missing.exists())
 
 
+class QuantityTests(unittest.TestCase):
+    def test_entry_validation(self):
+        from error_handler import validate_positive_int
+        for text in ("", "abc", "0", "-5", "1.5"):
+            with self.subTest(text=text):
+                self.assertFalse(validate_positive_int(text, "Количество")[0])
+        self.assertEqual(validate_positive_int("2", "Количество"), (True, 2))
+
+    def make_form(self):
+        from unittest.mock import Mock
+        from view_form import ViewForm
+        form = ViewForm.__new__(ViewForm)
+        form.window = Mock()
+        form.product = object()
+        form.data = {"id": 1}
+        form.final_price = 100
+        form.quantity_var = Mock()
+        form.quantity_var.get.return_value = "2"
+        form.client_var = Mock()
+        form.client_var.get.return_value = "Тестовый клиент"
+        form.on_add_to_order = Mock()
+        return form
+
+    def test_form_sends_client_and_entered_quantity(self):
+        import view_form
+        form = self.make_form()
+        with patch.object(view_form, "get_product_quantity", return_value=5):
+            with patch.object(view_form, "place_order", return_value=99) as save:
+                with patch.object(error_handler.messagebox, "showinfo"):
+                    form.add_to_order()
+        save.assert_called_once_with("Тестовый клиент", 1, 2)
+        form.on_add_to_order.assert_called_once_with()
+        form.window.destroy.assert_called_once()
+
+    def test_failed_save_has_no_success_and_keeps_form(self):
+        import view_form
+        form = self.make_form()
+        with patch.object(view_form, "get_product_quantity", return_value=5):
+            with patch.object(view_form, "place_order", return_value=None):
+                with patch.object(error_handler.messagebox, "showinfo") as success:
+                    form.add_to_order()
+                    success.assert_not_called()
+        form.on_add_to_order.assert_not_called()
+        form.window.destroy.assert_not_called()
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

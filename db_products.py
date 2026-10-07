@@ -29,6 +29,11 @@ def get_products_low_stock():
                      "SELECT * FROM Товар WHERE количество <= 3 ORDER BY id")
 
 
+def get_product_sizes(product_id):
+    """Вариант 27: размерных рядов и таблицы Размер нет."""
+    return []
+
+
 def print_catalog_with_highlight(products):
     if products is None:
         print("Каталог не прочитан: см. сообщение об ошибке")

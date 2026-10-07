@@ -6,7 +6,7 @@ from pathlib import Path
 
 from config import DB_PATH
 from error_handler import safe_call
-from permissions import require_order_create, require_order_view
+from permissions import require_order_create, require_order_view, require_admin
 
 
 def get_connection():
@@ -195,3 +195,48 @@ def _set_quantity(product_id, new_quantity):
 
 def update_product_quantity(product_id, new_quantity):
     return safe_call(_set_quantity, product_id, new_quantity)
+
+
+def get_order_by_id(order_id, current_user=None):
+    rows = safe_call(_read_for_user, "SELECT id, дата, клиент FROM Заказ WHERE id=?",
+                     (order_id,), current_user)
+    return rows[0] if rows else None
+
+
+def _update_order_date(order_id, new_date, current_user):
+    require_admin(current_user)
+    if not new_date:
+        raise ValueError("Укажите дату")
+    new_date = _date(new_date)
+    with closing(get_connection()) as connection, connection:
+        cursor = connection.execute("UPDATE Заказ SET дата=? WHERE id=?", (new_date, order_id))
+        if cursor.rowcount != 1:
+            raise ValueError("Заказ не найден")
+    return True
+
+
+def update_order_date(order_id, new_date, current_user=None):
+    return safe_call(_update_order_date, order_id, new_date, current_user) is True
+
+
+def _delete_order_item(item_id, current_user):
+    require_admin(current_user)
+    with closing(get_connection()) as connection, connection:
+        connection.execute("BEGIN IMMEDIATE")
+        row = connection.execute(
+            "SELECT товар_id, количество FROM Состав_заказа WHERE id=?", (item_id,)
+        ).fetchone()
+        if row is None:
+            return False
+        product_id, quantity = row
+        connection.execute("DELETE FROM Состав_заказа WHERE id=?", (item_id,))
+        cursor = connection.execute(
+            "UPDATE Товар SET количество=количество+? WHERE id=?", (quantity, product_id)
+        )
+        if cursor.rowcount != 1:
+            raise ValueError("Товар не найден; удаление отменено")
+    return True
+
+
+def delete_order_item(item_id, current_user=None):
+    return safe_call(_delete_order_item, item_id, current_user) is True

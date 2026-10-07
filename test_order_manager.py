@@ -191,5 +191,53 @@ class RoleTests(DatabaseTests):
         self.assertIsInstance(orders.create_order("Клиент", [(1, None, 1, 100)], current_user=client), int)
 
 
+class EditTests(DatabaseTests):
+    def make_order(self):
+        return orders.create_order("Клиент", [(1, None, 2, 100)], current_user=self.actor)
+
+    def test_admin_changes_date(self):
+        order_id = self.make_order()
+        self.assertTrue(orders.update_order_date(order_id, "2024-02-29", self.actor))
+        self.assertEqual(orders.get_order_by_id(order_id, self.actor)[1], "2024-02-29")
+
+    def test_invalid_dates_are_rejected(self):
+        order_id = self.make_order()
+        before = orders.get_order_by_id(order_id, self.actor)
+        for value in ("", "2024-02-30", "2024-2-1", "abc"):
+            with self.subTest(value=value):
+                self.assertFalse(orders.update_order_date(order_id, value, self.actor))
+                self.assertEqual(orders.get_order_by_id(order_id, self.actor), before)
+
+    def test_manager_cannot_edit(self):
+        import database
+        manager = database.get_user_by_login("manager1")
+        order_id = self.make_order()
+        item_id = orders.get_order_items(order_id, self.actor)[0][0]
+        before = orders.get_product_quantity(1)
+        self.assertFalse(orders.update_order_date(order_id, "2024-02-29", manager))
+        self.assertFalse(orders.delete_order_item(item_id, manager))
+        self.assertEqual(orders.get_product_quantity(1), before)
+
+    def test_delete_returns_stock_exactly_once(self):
+        before = orders.get_product_quantity(1)
+        order_id = self.make_order()
+        item_id = orders.get_order_items(order_id, self.actor)[0][0]
+        self.assertEqual(orders.get_product_quantity(1), before-2)
+        self.assertTrue(orders.delete_order_item(item_id, self.actor))
+        self.assertEqual(orders.get_product_quantity(1), before)
+        self.assertFalse(orders.delete_order_item(item_id, self.actor))
+        self.assertEqual(orders.get_product_quantity(1), before)
+        self.assertEqual(orders.get_order_total(order_id, self.actor), Decimal("0.00"))
+
+    def test_failure_restoring_stock_rolls_back_delete(self):
+        order_id = self.make_order()
+        item_id = orders.get_order_items(order_id, self.actor)[0][0]
+        before = orders.get_product_quantity(1)
+        self.execute("CREATE TRIGGER test_fail_stock BEFORE UPDATE ON Товар BEGIN SELECT RAISE(ABORT, 'test'); END")
+        self.assertFalse(orders.delete_order_item(item_id, self.actor))
+        self.assertEqual(len(orders.get_order_items(order_id, self.actor)), 1)
+        self.assertEqual(orders.get_product_quantity(1), before)
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)

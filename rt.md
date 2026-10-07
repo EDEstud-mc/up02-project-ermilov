@@ -16,4 +16,8 @@
 пара 19 - https://docs.google.com/document/d/1yQAUtSzzsEWQ_-vOpGveVeIievTsbcTDeGPrYuHZKWw/edit?usp=sharing
 пара 20 - https://docs.google.com/document/d/1ajwivuQrM1MHPSbBfk9bK0luXzTWei0tAvzP2ykLjnw/edit?usp=sharing
 пара 21 - https://docs.google.com/document/d/1vJ-lQNiqYjtY1ISDU1mPsWLjGLRcs8wrVT1ZXPb_eNE/edit?usp=sharing
-пара 22 - 
+пара 22 - https://docs.google.com/document/d/1G7TBC4hdJPumtX5rIC6wBWB1TunXnmZrPoXM3Igl1Qw/edit?usp=sharing
+пара 23 - https://docs.google.com/document/d/14T5Xp4TQAJ3OEtyXUTEO3dV2p6wFSoF0KcWXZH3WKmI/edit?usp=sharing
+пара 24 - https://docs.google.com/document/d/1PUvdVsXN7_zRqCXmJ6wSM1Az0dns1EnQKbaQqmM4N3A/edit?usp=sharing
+пара 25 - https://docs.google.com/document/d/1ieQ9Ssp-y4qg0MNQCYmbGeV0qXiYXXYxIDDudUlYJoI/edit?usp=sharing
+пара 26 - 

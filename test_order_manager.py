@@ -4,14 +4,17 @@ import tempfile
 import unittest
 from contextlib import closing
 from datetime import datetime
+from decimal import Decimal
 from pathlib import Path
 from unittest.mock import patch
 
 import order_manager as orders
+import migrate_orders
+import backup_db
 import error_handler
 
 
-class OrderTests(unittest.TestCase):
+class DatabaseTests(unittest.TestCase):
     def setUp(self):
         self.folder = tempfile.TemporaryDirectory()
         self.addCleanup(self.folder.cleanup)
@@ -19,111 +22,93 @@ class OrderTests(unittest.TestCase):
         shutil.copyfile(orders.DB_PATH, self.path)
         self.addCleanup(patch.stopall)
         patch.object(orders, "DB_PATH", str(self.path)).start()
+        patch.object(backup_db, "DB_PATH", str(self.path)).start()
         patch.object(error_handler.messagebox, "showerror").start()
         patch.object(error_handler.messagebox, "showwarning").start()
+        self.before_stock = self.rows("SELECT id, количество FROM Товар")
+        self.old_columns = {row[1] for row in self.rows("PRAGMA table_info(Заказ)")}
+        self.old_orders = self.rows("SELECT id, дата, клиент FROM Заказ ORDER BY id")
+        migrate_orders.migrate_orders()
 
     def rows(self, query, args=()):
         with closing(sqlite3.connect(self.path)) as connection:
             return connection.execute(query, args).fetchall()
 
-    def test_insert_and_date(self):
-        order_id = orders.add_order_to_db("Тестовый клиент", 1, 2)
+    def execute(self, query, args=()):
+        with closing(sqlite3.connect(self.path)) as connection, connection:
+            connection.execute(query, args)
+
+    def counts(self):
+        return (self.rows("SELECT COUNT(*) FROM Заказ")[0][0],
+                self.rows("SELECT COUNT(*) FROM Состав_заказа")[0][0])
+
+class OrderTests(DatabaseTests):
+    def test_migration_preserves_orders_and_stock(self):
+        self.assertEqual(self.rows("SELECT id, дата, клиент FROM Заказ ORDER BY id"), self.old_orders)
+        self.assertEqual(self.rows("SELECT id, количество FROM Товар"), self.before_stock)
+        self.assertEqual({r[1] for r in self.rows("PRAGMA table_info(Заказ)")}, {"id", "дата", "клиент"})
+        self.assertEqual(self.rows("PRAGMA foreign_key_check"), [])
+
+    def test_migration_can_be_repeated(self):
+        counts = self.counts()
+        migrate_orders.migrate_orders()
+        self.assertEqual(self.counts(), counts)
+
+    def test_multiple_items_and_fixed_price(self):
+        order_id = orders.create_order("Клиент", [(1, None, 2, 100.25), (2, None, 1, 200)])
         self.assertIsInstance(order_id, int)
-        self.assertEqual(self.rows("SELECT дата, клиент, товар_id, количество FROM Заказ WHERE id=?", (order_id,)),
-                         [(datetime.now().strftime("%Y-%m-%d"), "Тестовый клиент", 1, 2)])
-        self.assertEqual(orders.get_last_order_id(), order_id)
+        self.assertEqual(len(orders.get_order_items(order_id)), 2)
+        self.assertEqual(orders.get_order_total(order_id), Decimal("400.50"))
+        self.assertEqual(self.rows("SELECT дата FROM Заказ WHERE id=?", (order_id,)),
+                         [(datetime.now().strftime("%Y-%m-%d"),)])
+        self.execute("UPDATE Товар SET цена=999999 WHERE id=1")
+        self.assertEqual(orders.get_order_total(order_id), Decimal("400.50"))
 
-    def test_read_and_update_stock(self):
-        self.assertTrue(orders.update_product_quantity(1, 3))
+    def test_empty_order_is_rejected(self):
+        before = self.counts()
+        self.assertIsNone(orders.create_order("Клиент", []))
+        self.assertEqual(self.counts(), before)
+
+    def test_invalid_quantity_price_and_size(self):
+        before = self.counts()
+        for size, quantity, price in ((None, 0, 100), (None, -1, 100),
+                                      (None, True, 100), (None, 1.5, 100),
+                                      (None, 1, -1), (None, 1, "nan"), (42, 1, 100)):
+            with self.subTest(size=size, quantity=quantity, price=price):
+                self.assertIsNone(orders.create_order("Клиент", [(1, size, quantity, price)]))
+                self.assertEqual(self.counts(), before)
+
+    def test_insufficient_duplicate_product_rolls_back(self):
+        self.execute("UPDATE Товар SET количество=3 WHERE id=1")
+        before = self.counts()
+        self.assertIsNone(orders.create_order("Клиент", [(1, None, 2, 100), (1, None, 2, 100)]))
         self.assertEqual(orders.get_product_quantity(1), 3)
-        self.assertIsNone(orders.update_product_quantity(1, -1))
-        self.assertEqual(orders.get_product_quantity(1), 3)
+        self.assertEqual(self.counts(), before)
 
-    def test_place_order_updates_both_tables(self):
-        before = orders.get_product_quantity(1)
-        order_id = orders.place_order("Клиент", 1, 2)
-        self.assertIsInstance(order_id, int)
-        self.assertEqual(orders.get_product_quantity(1), before - 2)
-        self.assertEqual(self.rows("SELECT количество FROM Заказ WHERE id=?", (order_id,)), [(2,)])
-
-    def test_insufficient_stock_changes_nothing(self):
-        before = orders.get_product_quantity(1)
-        count = self.rows("SELECT COUNT(*) FROM Заказ")[0][0]
-        self.assertIsNone(orders.place_order("Клиент", 1, before + 1))
-        self.assertEqual(orders.get_product_quantity(1), before)
-        self.assertEqual(self.rows("SELECT COUNT(*) FROM Заказ")[0][0], count)
-
-    def test_missing_product_and_invalid_quantity(self):
-        for product_id, quantity in ((999999, 1), (1, 0), (1, -1), (1, 1.5), (1, True)):
-            with self.subTest(product_id=product_id, quantity=quantity):
-                self.assertIsNone(orders.place_order("Клиент", product_id, quantity))
-
-    def test_failure_after_insert_rolls_back(self):
-        before = self.rows("SELECT * FROM Заказ")
+    def test_failure_on_second_item_rolls_back_first(self):
         stock = orders.get_product_quantity(1)
-        with patch.object(orders, "_update_quantity", side_effect=sqlite3.OperationalError("test")):
-            self.assertIsNone(orders.place_order("Клиент", 1, 1))
-        self.assertEqual(self.rows("SELECT * FROM Заказ"), before)
+        before = self.counts()
+        self.assertIsNone(orders.create_order("Клиент", [(1, None, 1, 100), (999999, None, 1, 100)]))
         self.assertEqual(orders.get_product_quantity(1), stock)
+        self.assertEqual(self.counts(), before)
 
-    def test_all_available_products_on_copy(self):
-        for product_id, stock in self.rows("SELECT id, количество FROM Товар"):
-            if stock > 0:
-                with self.subTest(product_id=product_id):
-                    self.assertIsInstance(orders.place_order("Клиент", product_id), int)
-                    self.assertEqual(orders.get_product_quantity(product_id), stock - 1)
+    def test_foreign_keys_are_enabled(self):
+        with closing(orders.get_connection()) as connection:
+            self.assertEqual(connection.execute("PRAGMA foreign_keys").fetchone()[0], 1)
+        self.assertIsNone(orders.add_order_item(999999, 1, None, 1, 100))
 
-    def test_missing_database_does_not_create_file(self):
-        missing = Path(self.folder.name) / "absent.db"
-        with patch.object(orders, "DB_PATH", str(missing)):
-            self.assertIsNone(orders.place_order("Клиент", 1))
-        self.assertFalse(missing.exists())
+    def test_automatic_price_and_exact_stock_change(self):
+        self.execute("UPDATE Товар SET количество=5 WHERE id=4")
+        order_id = orders.create_order("Клиент", [(4, None, 2, None)])
+        self.assertIsInstance(order_id, int)
+        self.assertEqual(orders.get_product_quantity(4), 3)
+        self.assertGreater(orders.get_order_total(order_id), 0)
 
-
-class QuantityTests(unittest.TestCase):
-    def test_entry_validation(self):
-        from error_handler import validate_positive_int
-        for text in ("", "abc", "0", "-5", "1.5"):
-            with self.subTest(text=text):
-                self.assertFalse(validate_positive_int(text, "Количество")[0])
-        self.assertEqual(validate_positive_int("2", "Количество"), (True, 2))
-
-    def make_form(self):
-        from unittest.mock import Mock
-        from view_form import ViewForm
-        form = ViewForm.__new__(ViewForm)
-        form.window = Mock()
-        form.product = object()
-        form.data = {"id": 1}
-        form.final_price = 100
-        form.quantity_var = Mock()
-        form.quantity_var.get.return_value = "2"
-        form.client_var = Mock()
-        form.client_var.get.return_value = "Тестовый клиент"
-        form.on_add_to_order = Mock()
-        return form
-
-    def test_form_sends_client_and_entered_quantity(self):
-        import view_form
-        form = self.make_form()
-        with patch.object(view_form, "get_product_quantity", return_value=5):
-            with patch.object(view_form, "place_order", return_value=99) as save:
-                with patch.object(error_handler.messagebox, "showinfo"):
-                    form.add_to_order()
-        save.assert_called_once_with("Тестовый клиент", 1, 2)
-        form.on_add_to_order.assert_called_once_with()
-        form.window.destroy.assert_called_once()
-
-    def test_failed_save_has_no_success_and_keeps_form(self):
-        import view_form
-        form = self.make_form()
-        with patch.object(view_form, "get_product_quantity", return_value=5):
-            with patch.object(view_form, "place_order", return_value=None):
-                with patch.object(error_handler.messagebox, "showinfo") as success:
-                    form.add_to_order()
-                    success.assert_not_called()
-        form.on_add_to_order.assert_not_called()
-        form.window.destroy.assert_not_called()
+    def test_backup_is_a_valid_database(self):
+        path = backup_db.backup_database()
+        with closing(sqlite3.connect(path)) as connection:
+            self.assertEqual(connection.execute("PRAGMA integrity_check").fetchone()[0], "ok")
+            self.assertEqual(connection.execute("SELECT COUNT(*) FROM Заказ").fetchone()[0], self.counts()[0])
 
 
 if __name__ == "__main__":

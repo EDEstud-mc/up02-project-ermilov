@@ -9,7 +9,7 @@ from styles import (
     FONT_SIZE_NORMAL, FONT_SIZE_TITLE, font
 )
 from error_handler import validate_positive_int, safe_call
-from order_manager import place_order, get_product_quantity
+from order_manager import get_product_quantity
 
 
 class ViewForm:
@@ -75,14 +75,7 @@ class ViewForm:
         self.quantity_var = tk.StringVar(self.window, value="1")
         tk.Entry(row, textvariable=self.quantity_var, width=8,
                  font=font()).pack(side="left")
-        client_row = tk.Frame(info, bg=COLOR_MAIN_BG)
-        client_row.pack(fill="x", pady=8)
-        tk.Label(client_row, text="ФИО клиента:", font=font(bold=True),
-                 width=17, anchor="w", bg=COLOR_MAIN_BG).pack(side="left")
-        self.client_var = tk.StringVar(self.window, value="")
-        tk.Entry(client_row, textvariable=self.client_var,
-                 font=font()).pack(side="left", fill="x", expand=True)
-        tk.Label(info, text="Заказ записывается в БД; остаток уменьшается.",
+        tk.Label(info, text="Добавьте игры в корзину, затем подтвердите единый заказ.",
                  bg=COLOR_MAIN_BG, font=font(10), wraplength=330,
                  justify="left").pack(anchor="w", pady=10)
 
@@ -127,15 +120,14 @@ class ViewForm:
             messagebox.showwarning("Недостаточно товара", f"Доступно {current} шт.",
                                    parent=self.window)
             return
-        client = self.client_var.get().strip()
-        if not client:
-            messagebox.showwarning("Клиент", "Укажите ФИО клиента", parent=self.window)
+        if self.on_add_to_order is None:
+            messagebox.showerror("Корзина", "Не передан обработчик корзины", parent=self.window)
             return
-        order_id = place_order(client, self.data["id"], result)
-        if order_id is None:
+        try:
+            self.on_add_to_order(self.product, result)
+        except Exception as error:
+            messagebox.showwarning("Корзина", str(error), parent=self.window)
             return
-        messagebox.showinfo("Успех", f"Заказ №{order_id} сохранён в БД",
+        messagebox.showinfo("Корзина", "Игра добавлена. Подтвердите заказ в корзине.",
                             parent=self.window)
-        if self.on_add_to_order is not None:
-            safe_call(self.on_add_to_order)
         self.window.destroy()

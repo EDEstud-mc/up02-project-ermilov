@@ -26,10 +26,11 @@ def _read_orders():
     uri = Path(DB_PATH).resolve().as_uri() + "?mode=ro"
     with closing(sqlite3.connect(uri, uri=True)) as connection:
         rows = connection.execute("""
-            SELECT Заказ.id, Заказ.дата, Заказ.клиент, Заказ.количество,
+            SELECT Заказ.id, Заказ.дата, Заказ.клиент, Состав_заказа.количество,
                    Товар.id, Товар.жанр, Товар.название, Товар.разработчик,
                    Товар.цена, Товар.количество, Товар.обложка
-            FROM Заказ JOIN Товар ON Заказ.товар_id = Товар.id
+            FROM Заказ JOIN Состав_заказа ON Заказ.id=Состав_заказа.заказ_id
+            JOIN Товар ON Состав_заказа.товар_id=Товар.id
             ORDER BY Заказ.id
         """).fetchall()
     return [Order(row[0], row[1], row[2],

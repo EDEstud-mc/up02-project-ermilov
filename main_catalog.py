@@ -9,9 +9,11 @@ from config import APP_TITLE, DB_PATH
 from catalog import create_product_card
 from catalog_data import prepare_product
 from error_handler import safe_call
+from discount import calculate_price_with_discount
+from order_manager import get_product_quantity
 from resources import load_image_proportional, PATH_LOGO, PATH_ICON
 from styles import (
-    COLOR_MAIN_BG, COLOR_SECONDARY_BG,
+    COLOR_MAIN_BG, COLOR_SECONDARY_BG, COLOR_ACCENT,
     FONT_SIZE_NORMAL, FONT_SIZE_TITLE, font
 )
 
@@ -46,6 +48,7 @@ class CatalogWindow:
         self.root.geometry("900x700")
         self.root.minsize(600, 500)
         set_app_icon(self.root, PATH_ICON)
+        self.cart = {}
         self.build_ui()
         self.load_products()
 
@@ -69,6 +72,9 @@ class CatalogWindow:
             header, text="КАТАЛОГ ТОВАРОВ",
             font=font(FONT_SIZE_TITLE, bold=True), bg=COLOR_SECONDARY_BG
         ).pack(expand=True)
+
+        tk.Button(header, text="Корзина", command=self.open_cart,
+                  bg=COLOR_ACCENT, fg="white", font=font()).pack(side="right", padx=10)
 
         self.canvas = tk.Canvas(self.root, bg=COLOR_MAIN_BG, highlightthickness=0)
         scrollbar = ttk.Scrollbar(
@@ -128,10 +134,27 @@ class CatalogWindow:
     def _create_card_checked(self, product, errors):
         try:
             return create_product_card(
-                self.catalog_frame, product, refresh=self.refresh_catalog
+                self.catalog_frame, product, on_add_to_order=self.add_to_cart
             )
         except (ValueError, TypeError, AttributeError, IndexError) as error:
             errors.append(f"id={getattr(product, 'id', '?')}: {error}")
+
+    def add_to_cart(self, product, quantity):
+        data = prepare_product(product)
+        current = get_product_quantity(data["id"])
+        if current is None:
+            raise ValueError("Не удалось прочитать остаток")
+        previous = self.cart.get(data["id"], {}).get("quantity", 0)
+        if quantity <= 0 or previous + quantity > current:
+            raise ValueError(f"Можно добавить ещё {max(0, current-previous)} шт.")
+        price = calculate_price_with_discount(data["id"], data["price"])
+        if price is None:
+            raise ValueError("Не удалось рассчитать цену")
+        self.cart[data["id"]] = dict(name=data["name"], quantity=previous+quantity, price=price)
+
+    def open_cart(self):
+        from cart_window import CartWindow
+        safe_call(CartWindow, self.root, self.cart, self.refresh_catalog)
 
     def refresh_catalog(self):
         for widget in self.catalog_frame.winfo_children():

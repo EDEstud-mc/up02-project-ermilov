@@ -22,8 +22,9 @@ def _calculate_price(product_id, price, date_context=None):
     uri = Path(DB_PATH).resolve().as_uri() + "?mode=ro"
     with closing(sqlite3.connect(uri, uri=True)) as connection:
         count = connection.execute(
-            "SELECT COUNT(*) FROM Заказ "
-            "WHERE товар_id = ? AND дата >= ? AND дата < ?",
+            "SELECT COUNT(*) FROM Заказ JOIN Состав_заказа "
+            "ON Заказ.id=Состав_заказа.заказ_id "
+            "WHERE Состав_заказа.товар_id = ? AND дата >= ? AND дата < ?",
             (product_id, previous_start.isoformat(), current_start.isoformat())
         ).fetchone()[0]
     if count == 0:

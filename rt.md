@@ -13,3 +13,7 @@
 пара 14 - https://docs.google.com/document/d/1wuK7R-zyS66273CGWSThfQ5SKFCSALs195kDxAvVdCU/edit?usp=sharing
 пара 15 - https://docs.google.com/document/d/16ykH7j042F2xZ4A5exN-FtNC5o3MbCkTjgd2Te0Clm0/edit?usp=sharing
 пара 18 - https://docs.google.com/document/d/1oyWPv-_GLi5B-YZaRibVE1HCMFYKpxafso9twFsRWnU/edit?usp=sharing
+пара 19 - https://docs.google.com/document/d/1yQAUtSzzsEWQ_-vOpGveVeIievTsbcTDeGPrYuHZKWw/edit?usp=sharing
+пара 20 - https://docs.google.com/document/d/1ajwivuQrM1MHPSbBfk9bK0luXzTWei0tAvzP2ykLjnw/edit?usp=sharing
+пара 21 - https://docs.google.com/document/d/1vJ-lQNiqYjtY1ISDU1mPsWLjGLRcs8wrVT1ZXPb_eNE/edit?usp=sharing
+пара 22 - 

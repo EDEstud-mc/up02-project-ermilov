@@ -21,4 +21,5 @@
 пара 24 - https://docs.google.com/document/d/1PUvdVsXN7_zRqCXmJ6wSM1Az0dns1EnQKbaQqmM4N3A/edit?usp=sharing
 пара 25 - https://docs.google.com/document/d/1ieQ9Ssp-y4qg0MNQCYmbGeV0qXiYXXYxIDDudUlYJoI/edit?usp=sharing
 пара 26 - https://docs.google.com/document/d/1GOOcjHtiShH1qqxTqOyCCEhLNqo_oLOZBIbPao4eE20/edit?usp=sharing
-пара 27 - 
+пара 27 - https://docs.google.com/document/d/18Za5A8LlufdzbPFnZYWsVDbaf5dcFHNyN2Qk5b1HXqU/edit?usp=sharing
+пара 30 - 
